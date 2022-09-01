@@ -1,0 +1,73 @@
+Deployment 1 Kura Labs Nicole Navarrete 08.31.22
+
+1. Create an Ubuntu EC2 on AWS
+    Press Launch an instance 
+        Edit the configuration page: 
+            Create a name, 
+            choose ubuntu Amazon Machine Image, 
+            choose t2.micro free tier eligible instance type,
+            create and download a new key pair (RSA key pair type and .pem private key file format ex key.pem),
+            create security groups (ssh, 22, 0.0.0.0/0) (HTTPS, 80, 0.0.0.0/0) (HTTPS, 8080, 0.0.0.0/0),
+    Press Launch instance
+2. Log into EC2
+    In VM terminal make sure you are in the directory where your private key .pem from EC2 is (ex ~/Downloads)
+        Make key readable to just you
+            $chmod 400 key.pem
+        Find IP4 address of EC2 in AWS under EC2 dashboard and login
+            $ssh -i key.pem ubuntu@EC2PublicIPV4address (ex. 184.73.86.61)
+        Confirm your logged into EC2 in VM terminal by looking at user prompt 
+3. Install Jenkins
+    Grab install from repository
+        $curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+        $echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \ https://pkg.jenkins.io/debian-stable binary/ | sudo tee \ /etc/apt/sources.list.d/jenkins.list > /dev/null
+        $sudo apt-get update
+        $sudo apt-get install jenkins
+    Start Jenkins
+        $sudo systemctl start jenkins
+    Check it's running
+        $sudo systemctl status jenkins
+4. Install python
+    $sudo apt install python3
+    $sudo apt install python3-venv
+5. Create personal access token in GitHub
+    Ensure project repository is forked into personal GutHub
+    Click on account settings 
+        go to Developer Settings all the way at the bottom of left-side box
+        click Personal access tokens and press generate new tokens
+            select scopes repo and admin:repo_hook
+        Copy token to use in next step
+6. Configure Jenkins
+    Open browser and enter http:\\EC2PublicIPv4address:8080 (ex 184.73.86.61:8080)
+    Create Jenkins profile
+    In Dashboard add New Item
+        Enter item name (ex url-shortner) and select Multibranch Pipeline
+        Enter display name (ex Build Flask) and Description (ex CI/CD pipeline deployment 1)
+        Add Branch Source as GitHub
+            add Jenkins 
+            Enter GitHub username and paste access token as password
+            Enter forked repository url
+        Apply and Save
+        Build should be created
+7. Clone forked repository to local server (VM) and compress files
+        In GitHub copy ssh code of forked project repository
+        In terminal: 
+            $git clone sshcode (ex git@github.com:nenava97/kuralabs_deployment_1.git)
+            then zip repository
+            $git archive -v -o zipefilename (ex deploy1.zip) --format=zip HEAD
+8. Create new enviornment in AWS Elastic Beanstalk
+    Edit the configure page:
+        Select web server enviornment,
+        enter application name (ex url-shortner),
+        create enviornment name (ex Urlshortner-env),
+        choose platform (ex Python, branch: 3.8, version: 3.3.16),
+        select Upload your code from Local file 
+            Choose file of zip cloned repository (ex deploy1.zip)
+    Create Enviornment
+9. Test enviornment
+    Click on url AWS created for your enviornment and make sure the webpage opens without error
+
+What would have changed:
+- Make sure to configure the security groups when creating the EC2 (originally added security groups later and attached to EC2) and they all have source of 0.0.0.0/0.
+- Make clone of forked repository from GitHub and zip with options for hidden files (originally downloaded files and when zipped missed hidden files).
+- After logging into Jenkins do not need to cloud configure with GitHub key pairs or username password, intead can use access token created from GitHub.   
